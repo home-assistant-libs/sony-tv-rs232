@@ -1,9 +1,10 @@
-# WORK IN PROGRESS - UNTESTED
-
 # sony-tv-rs232
 
 Async Python library to control Sony Bravia TVs over RS232 serial, built on
 [serialx](https://github.com/puddly/serialx).
+
+## Tested & verified models 
+- K85XR90
 
 ## Installation
 
