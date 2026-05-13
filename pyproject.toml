@@ -10,7 +10,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "serialx>=0.8.0",
+    "serialx>=1.8.0",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-esphome = ["serialx[esphome]>=0.8.0"]
+esphome = ["serialx[esphome]>=1.8.0"]
 
 [project.scripts]
 sony-tv-rs232 = "sony_tv_rs232.__main__:main"
@@ -43,7 +43,7 @@ dev = [
     "pytest>=9.0",
     "pytest-asyncio>=1.0",
     "pytest-timeout>=2.4.0",
-    "serialx[esphome]>=0.8.0",
+    "serialx[esphome]>=1.8.0",
 ]
 
 [tool.pytest.ini_options]
