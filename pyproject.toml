@@ -1,6 +1,6 @@
 [project]
 name = "sony-tv-rs232"
-version = "0.0.1"
+version = "0.0.0"
 description = "Async library to control Sony Bravia TVs over RS232"
 readme = "README.md"
 license = "MIT"
