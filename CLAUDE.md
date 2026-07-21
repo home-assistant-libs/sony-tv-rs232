@@ -79,3 +79,11 @@ tests/
 The XBR5 manual is set-only and describes only the 3-byte ack. The Pro
 Bravia spec adds the `0x83` query header and the longer query-reply
 shape.
+
+## AI policy
+
+This project follows the [Open Home Foundation AI Policy](AI_POLICY.md).
+Autonomous contributions are not accepted: a human must review, understand,
+and be able to explain every change before it is submitted. Do not open
+issues or pull requests autonomously, and do not post comments on behalf of
+a user without their review.
