@@ -10,7 +10,6 @@ residual buffer + no resync + no watchdog). serialkit owns all of that now.
 ```
 src/sony_tv_rs232/
   __init__.py    -- public API re-exports (incl. serialkit error types)
-  _kit.py        -- the single serialkit import seam (rewritten when vendored)
   const.py       -- headers, Function/enum codes, baud, delays
   protocol.py    -- encode_control/encode_query/parse_answer/checksum/Answer;
                     SonyCommandError + SonyProtocolError subclass serialkit.ProtocolError
@@ -45,12 +44,6 @@ tests/
   mutates `state` and calls `notify()` on the caller task — Sony state is only
   meaningful in request context (the answer bytes alone don't say what they
   answer).
-
-## The `_kit.py` seam
-
-Every serialkit import goes through `_kit.py`. When this package is vendored
-into the Home Assistant integration alongside a vendored `serialkit`, only that
-one file changes (`from serialkit import ...` → `from ..serialkit import ...`).
 
 ## Testing
 
