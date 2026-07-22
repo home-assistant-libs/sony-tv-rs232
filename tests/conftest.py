@@ -1,104 +1,85 @@
-"""Shared test fixtures for sony_tv_rs232."""
+"""Sony driver test harness on serialkit.testing.
+
+No real hardware: a :class:`FakeLink` is the injected transport, and
+:class:`FakeSonyTV` decodes written packets and scripts plausible answers so
+the driver can be exercised end-to-end (handshake, queries, sets).
+"""
 
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Callable
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
+from serialkit import Backoff, Pacing
+from serialkit.testing import FakeLink
 
-import sony_tv_rs232
-import sony_tv_rs232.tv as sony_tv_module
-from sony_tv_rs232 import (
-    AnswerCode,
-    SonyTV,
-    checksum,
-)
-from sony_tv_rs232.const import HEADER_ANSWER
-
-# Speed up tests
-sony_tv_rs232.COMMAND_TIMEOUT = 0.1
-sony_tv_module.COMMAND_TIMEOUT = 0.1
-sony_tv_module.INTER_COMMAND_DELAY = 0.0
+from sony_tv_rs232 import SonyTV
+from sony_tv_rs232.const import HEADER_CONTROL, HEADER_INQUIRY
+from sony_tv_rs232.protocol import checksum
 
 
-def ack(code: AnswerCode = AnswerCode.COMPLETED) -> bytes:
-    """Build a 3-byte Set-ack packet from the TV."""
-    body = bytes([HEADER_ANSWER, code.value])
+def short_ack(code: int = 0x00) -> bytes:
+    """A Set-ack answer: [0x70][code][cs]."""
+    body = bytes([0x70, code])
     return body + bytes([checksum(body)])
 
 
-def reply(data: bytes, code: AnswerCode = AnswerCode.COMPLETED) -> bytes:
-    """Build a query-reply packet [0x70][code][size][...data][cs] from the TV.
+def long_reply(data: bytes, code: int = 0x00) -> bytes:
+    """A query reply: [0x70][code][size][data...][cs], size = len(data)+1."""
+    body = bytes([0x70, code, len(data) + 1]) + bytes(data)
+    return body + bytes([checksum(body)])
 
-    ``size`` is the count of bytes after the size byte (data + checksum).
+
+class FastSonyTV(SonyTV):
+    """SonyTV with pacing, timeouts, and backoff shrunk so tests run fast."""
+
+    pacing = Pacing(min_interval=0.0)
+    request_timeout = 0.2
+    backoff = Backoff(initial=0.01, factor=1.0, max_delay=0.01)
+
+
+class NoHandshakeSonyTV(FastSonyTV):
+    """FastSonyTV that skips the on_connect handshake (for command-level tests)."""
+
+    async def on_connect(self) -> None:
+        return
+
+
+class FakeSonyTV:
+    """A protocol-aware responder wired to a FakeLink's on_write.
+
+    Sets are acked (COMPLETED). Queries for functions in ``query_data`` get a
+    long reply echoing that data; unscripted queries get a bare COMPLETED ack
+    (no data), which the driver treats as "answered but nothing to decode".
     """
-    size = len(data) + 1
-    body = bytes([HEADER_ANSWER, code.value, size]) + data
-    return body + bytes([checksum(body)])
 
+    def __init__(
+        self,
+        link: FakeLink,
+        *,
+        query_data: dict[int, bytes] | None = None,
+    ) -> None:
+        self.link = link
+        self.query_data = dict(query_data or {})
+        self.received: list[bytes] = []
+        link.on_write = self._on_write
 
-# Maps the exact bytes the host writes to the bytes the mock TV should
-# reply with.
-DEFAULT_RESPONSES: dict[bytes, bytes] = {
-    # Power query 83 00 00 FF FF 81 -> reply 70 00 02 01 73 (power on)
-    bytes.fromhex("83 00 00 ff ff 81".replace(" ", "")): reply(b"\x01"),
-}
-
-
-class MockSerialConnection:
-    """Mock serial reader/writer pair with auto-response support."""
-
-    def __init__(self) -> None:
-        self.reader = asyncio.StreamReader()
-        self.writer = MagicMock()
-        self.writer.write = MagicMock()
-        self.writer.drain = AsyncMock()
-        self.writer.close = MagicMock()
-        self.writer.wait_closed = AsyncMock()
-        self.written: list[bytes] = []
-        self.responses: dict[bytes, bytes] = {}
-        self.command_handler: Callable[[bytes], None] | None = None
-        self.writer.write.side_effect = self._on_write
-
-    def _on_write(self, data: bytes) -> None:
-        self.written.append(data)
-        if data in self.responses:
-            self.feed(self.responses[data])
-        elif self.command_handler is not None:
-            self.command_handler(data)
-        else:
-            # Default: ack any Set command (header 8C, category 00)
-            if len(data) >= 2 and data[0] == 0x8C and data[1] == 0x00:
-                self.feed(ack())
-
-    def feed(self, packet: bytes) -> None:
-        """Inject raw bytes into the reader."""
-        self.reader.feed_data(packet)
+    def _on_write(self, packet: bytes) -> None:
+        self.received.append(packet)
+        header = packet[0]
+        function = packet[2]
+        if header == HEADER_INQUIRY:
+            data = self.query_data.get(function)
+            self.link.rx(long_reply(data) if data is not None else short_ack())
+        elif header == HEADER_CONTROL:
+            self.link.rx(short_ack())
 
 
 @pytest.fixture
-async def mock_serial() -> MockSerialConnection:
-    return MockSerialConnection()
+def link() -> FakeLink:
+    return FakeLink()
 
 
-@pytest.fixture
-async def tv(mock_serial: MockSerialConnection):
-    """Create a connected SonyTV with mocked serial."""
-    tv = SonyTV("/dev/ttyUSB0")
-    mock_serial.responses = dict(DEFAULT_RESPONSES)
-
-    async def fake_open(*args, **kwargs):
-        return mock_serial.reader, mock_serial.writer
-
-    with patch(
-        "sony_tv_rs232.tv.serialx.open_serial_connection",
-        side_effect=fake_open,
-    ):
-        await tv.connect()
-
-    yield tv
-
-    if tv.connected:
-        await tv.disconnect()
+def make_tv(link: FakeLink, cls: type[SonyTV] = NoHandshakeSonyTV) -> SonyTV:
+    """Build a SonyTV wired to the fake transport."""
+    tv = cls("mock://test")
+    tv._connect = link.connect  # inject the fake transport factory
+    return tv
