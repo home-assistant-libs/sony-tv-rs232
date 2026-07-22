@@ -2,14 +2,13 @@
 
 The robustness machinery (framing, request/response correlation, pacing,
 reconnect, the read loop) lives in :class:`serialkit.SerialDevice`. This module
-is just the Sony command surface plus the wiring that configures the runtime.
+is the Sony command surface plus the wiring that configures the runtime.
 
-Migration note (fixes the production desync): correlation is no longer the
-positional ``pending.pop(0)`` FIFO — Sony answers carry no identifying content,
-so the driver serializes with ``max_in_flight = 1`` (one command owed a reply
-at a time) and lets serialkit's slot gate + write-abandon guarantee that a
-dropped or garbled answer can never shift correlation onto the next command.
-The hand-rolled 500 ms sleeps, read loop, teardown, and pending list are gone.
+Sony answer frames carry no identifying content, so responses cannot be
+correlated by content. Commands are therefore serialized with
+``max_in_flight = 1`` (one command owed a reply at a time); serialkit's slot
+gate and write-abandon then guarantee that a dropped or garbled answer times
+its command out rather than being misattributed to the next one.
 """
 
 from __future__ import annotations
