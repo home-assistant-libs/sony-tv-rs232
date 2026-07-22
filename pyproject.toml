@@ -11,7 +11,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "serialx>=1.8.2",
-    "serialkit>=0.1.1",
+    "serial-toolkit>=0.1.2",  # the serialkit toolkit (import name: serialkit)
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -44,11 +44,6 @@ dev = [
     "pytest-asyncio>=1.0",
     "pytest-timeout>=2.4.0",
 ]
-
-# serialkit is not yet on PyPI; resolve it from GitHub until it is published,
-# then drop this source and rely on the >=0.1.1 dependency above.
-[tool.uv.sources]
-serialkit = { git = "https://github.com/bbangert/serialkit", tag = "v0.1.1" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
