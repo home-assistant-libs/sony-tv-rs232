@@ -7,7 +7,7 @@ import pytest
 from sony_tv_rs232 import (
     Answer,
     AnswerCode,
-    CommandError,
+    SonyCommandError,
     ProtocolError,
     byte_to_percent,
     checksum,
@@ -76,7 +76,7 @@ def test_parse_answer_error() -> None:
     packet = body + bytes([checksum(body)])
     answer = parse_answer(packet)
     assert not answer.ok
-    with pytest.raises(CommandError):
+    with pytest.raises(SonyCommandError):
         answer.raise_for_status(0x05)
 
 

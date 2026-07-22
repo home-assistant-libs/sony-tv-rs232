@@ -1,32 +1,32 @@
 [project]
 name = "sony-tv-rs232"
 version = "0.0.0"
-description = "Async library to control Sony Bravia TVs over RS232"
+description = "Async library to control Sony Bravia TVs over RS232, built on serialkit"
 readme = "README.md"
 license = "MIT"
 authors = [
     { name = "Ben Bangert", email = "ben@groovie.org" },
     { name = "Paulus Schoutsen", email = "balloob@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
-    "serialx>=1.8.0",
+    "serialx>=1.8.2",
+    "serialkit>=0.1.1",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Home Automation",
     "Topic :: System :: Hardware",
     "Framework :: AsyncIO",
+    "Typing :: Typed",
 ]
 
 [project.optional-dependencies]
-esphome = ["serialx[esphome]>=1.8.0"]
+esphome = ["serialx[esphome]>=1.8.2"]
 
 [project.scripts]
 sony-tv-rs232 = "sony_tv_rs232.__main__:main"
@@ -43,9 +43,17 @@ dev = [
     "pytest>=9.0",
     "pytest-asyncio>=1.0",
     "pytest-timeout>=2.4.0",
-    "serialx[esphome]>=1.8.0",
 ]
+
+# serialkit is not yet on PyPI; resolve it from GitHub until it is published,
+# then drop this source and rely on the >=0.1.1 dependency above.
+[tool.uv.sources]
+serialkit = { git = "https://github.com/bbangert/serialkit", tag = "v0.1.1" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-timeout = 1
+asyncio_default_fixture_loop_scope = "function"
+timeout = 5
+filterwarnings = [
+    "error::RuntimeWarning",
+]
