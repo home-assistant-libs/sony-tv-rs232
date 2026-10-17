@@ -21,6 +21,7 @@ import serialx
 
 from serialkit import (
     CommandTimeoutError,
+    ConnectionLostError,
     Pacing,
     ProtocolError,
     SerialDevice,
@@ -137,7 +138,10 @@ class SonyTV(SerialDevice[TVState]):
         self._supports_queries: bool | None = None
 
     async def _open_connection(self) -> tuple[object, object]:
-        return await serialx.open_serial_connection(self._port, baudrate=BAUD_RATE)
+        try:
+            return await serialx.open_serial_connection(self._port, baudrate=BAUD_RATE)
+        except serialx.SerialException as err:
+            raise ConnectionLostError(str(err)) from err
 
     @property
     def supports_queries(self) -> bool | None:
