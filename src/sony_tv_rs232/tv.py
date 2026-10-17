@@ -18,7 +18,6 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 import serialx
-
 from serialkit import (
     CommandTimeoutError,
     ConnectionLostError,
@@ -26,6 +25,7 @@ from serialkit import (
     ProtocolError,
     SerialDevice,
 )
+
 from .const import (
     BAUD_RATE,
     COMMAND_TIMEOUT,

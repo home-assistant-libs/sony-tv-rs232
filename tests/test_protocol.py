@@ -7,8 +7,8 @@ import pytest
 from sony_tv_rs232 import (
     Answer,
     AnswerCode,
-    SonyCommandError,
     ProtocolError,
+    SonyCommandError,
     byte_to_percent,
     checksum,
     encode_control,
