@@ -86,7 +86,7 @@ async def _diagnose(port: str) -> int:
     """
     import serialx
 
-    from . import BAUD_RATE, encode_query, Function
+    from . import BAUD_RATE, Function, encode_query
 
     print(f"[diag] Opening {port} at {BAUD_RATE} baud (raw)...")
     reader, writer = await serialx.open_serial_connection(port, baudrate=BAUD_RATE)
@@ -113,8 +113,8 @@ async def _diagnose(port: str) -> int:
         writer.close()
         try:
             await writer.wait_closed()
-        except Exception:
-            pass
+        except (OSError, serialx.SerialException) as err:
+            logging.getLogger(__name__).debug("Error closing serial port: %s", err)
 
     if received:
         print(f"[diag] Got {len(received)} chunks; total {sum(len(c) for c in received)} bytes")

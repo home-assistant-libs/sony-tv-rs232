@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from conftest import FakeSonyTV, FastSonyTV, make_tv, short_ack
 from serialkit import CommandTimeoutError
 
 from sony_tv_rs232 import (
@@ -18,9 +19,6 @@ from sony_tv_rs232 import (
     SonyCommandError,
     SonyProtocolError,
 )
-
-from conftest import FakeSonyTV, FastSonyTV, make_tv, short_ack
-
 
 # ---- set / query round-trips -------------------------------------------
 

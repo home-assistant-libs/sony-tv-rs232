@@ -11,7 +11,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "serialx>=1.8.2",
-    "serial-toolkit>=0.1.2",  # the serialkit toolkit (import name: serialkit)
+    "serial-toolkit>=0.1.2,<0.2",  # the serialkit toolkit (import name: serialkit)
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
